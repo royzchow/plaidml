@@ -16,6 +16,7 @@ using util::GatherMode;
 using util::InterpolationMode;
 using util::NearestMode;
 using util::ScatterMode;
+using util::PaddingMode;
 
 namespace {
 
@@ -500,7 +501,20 @@ struct GatherOpConversion : public OpConversionPattern<tile::GatherOp> {
     // Return interpolation result (result = c0*g0 + c1*g1)
     Value p0 = rewriter.create<mlir::MulFOp>(loc, c0, g0).getResult();
     Value p1 = rewriter.create<mlir::MulFOp>(loc, c1, g1).getResult();
-    return rewriter.create<mlir::AddFOp>(loc, p0, p1).getResult();
+    Value result = rewriter.create<mlir::AddFOp>(loc, p0, p1).getResult();
+    switch (paddingMode) {
+    case PaddingMode::edge:
+      result = getLinearInterpolationResultWithEdgePaddingMode(loc, rewriter,
+                                                               result);
+      break;
+    case PaddingMode::zero:
+      result = getLinearInterpolationResultWithZeroPaddingMode(
+          loc, rewriter, result, cst1F, idx, bounds, elementType);
+      break;
+    default:
+      llvm_unreachable("Unsupported PaddingMode");
+    }
+      return result;
   }
 
   Value buildCubicInterpolationOps(Location loc,
@@ -674,6 +688,38 @@ struct GatherOpConversion : public OpConversionPattern<tile::GatherOp> {
         loc, floatType, rewriter.getFloatAttr(floatType, 0.5));
     auto valuePlusHalf = rewriter.create<mlir::AddFOp>(loc, value, half);
     return floorFPToSI(loc, rewriter, valuePlusHalf, integerType);
+  }
+
+  Value getLinearInterpolationResultWithEdgePaddingMode(
+      Location loc, ConversionPatternRewriter &rewriter, Value result) const {
+    return result;
+  }
+
+  Value getLinearInterpolationResultWithZeroPaddingMode(
+      Location loc, ConversionPatternRewriter &rewriter, Value result,
+      Value cst1F, Value idx, IndexBounds bounds, Type elementType) const {
+    auto cst0F =
+        rewriter
+            .create<mlir::ConstantOp>(loc, elementType,
+                                      rewriter.getFloatAttr(elementType, 0.0))
+            .getResult();
+    auto f32Type = rewriter.getF32Type();
+    auto bound =
+        rewriter.create<mlir::SIToFPOp>(loc, bounds.upper, f32Type).getResult();
+    auto bound_add_one =
+        rewriter.create<mlir::AddFOp>(loc, bound, cst1F).getResult();
+    auto bound_lower =
+        rewriter.create<mlir::SIToFPOp>(loc, bounds.lower, f32Type).getResult();
+    auto cmp_bound_add_one = rewriter.create<mlir::CmpFOp>(
+        loc, CmpFPredicate::OGE, idx, bound_add_one);
+    auto cmp_lower = rewriter.create<mlir::CmpFOp>(loc, CmpFPredicate::OLT, idx,
+                                                   bound_lower);
+    result =
+        rewriter.create<mlir::SelectOp>(loc, cmp_bound_add_one, cst0F, result)
+            .result();
+    result =
+        rewriter.create<mlir::SelectOp>(loc, cmp_lower, cst0F, result).result();
+    return result;
   }
 };
 
