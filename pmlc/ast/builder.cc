@@ -767,6 +767,7 @@ struct ProgramBuilder {
     FloatAttr cubeCoeff;
     IntegerAttr mode;
     IntegerAttr batchDims;
+    IntegerAttr paddingMode;
     if (!matchPattern(operands[2], m_Constant(&axis))) {
       throw std::runtime_error("'gather' primitive expects the 'axis' argument "
                                "to be a constant integer");
@@ -795,10 +796,15 @@ struct ProgramBuilder {
           "'gather' primitive expects the 'batchDims' argument "
           "to be a constant integer");
     }
+    if (!matchPattern(operands[8], m_Constant(&paddingMode))) {
+      throw std::runtime_error(
+          "'gather' primitive expects the 'paddingMode' argument "
+          "to be a constant integer");
+    }
     auto op = builder.create<tile::GatherOp>(
         loc, resultType, operands.take_front(2),
         builder.getIndexAttr(axis.getInt()), interpolationMode, nearestMode,
-        cubeCoeff, mode, builder.getIndexAttr(batchDims.getInt()));
+        cubeCoeff, mode, builder.getIndexAttr(batchDims.getInt()), paddingMode);
     return op.result();
   }
 

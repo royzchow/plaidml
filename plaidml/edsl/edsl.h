@@ -934,6 +934,7 @@ enum class NearestMode : uint64_t {
 
 enum class GatherMode : uint64_t { NORMAL, ND };
 
+enum class PaddingMode : uint64_t { EDGE, ZERO };
 ///
 /// Gather takes an input tensor (`x`) and a set of indices to gather over (`y`), and computes an output tensor that
 /// gathers the input tensor from the indices specified.
@@ -987,11 +988,17 @@ class gather {
     return *this;
   }
 
+  gather& paddingMode(PaddingMode mode) {
+    padding_mode_ = Tensor(static_cast<uint64_t>(mode));
+    return *this;
+  }
+
   ///
   /// Construct gather.
   ///
   Tensor build(edsl_source_location loc = edsl_source_location::current()) const {
-    std::vector<Tensor> args = {x_, y_, axis_, interpolation_mode_, nearest_mode_, cube_coeff_, mode_, batch_dims_};
+    std::vector<Tensor> args = {x_,          y_,    axis_,       interpolation_mode_, nearest_mode_,
+                                cube_coeff_, mode_, batch_dims_, padding_mode_};
     return intrinsicCall(loc, "gather", args);
   }
 
@@ -1013,6 +1020,7 @@ class gather {
   Tensor nearest_mode_ = Tensor(static_cast<uint64_t>(NearestMode::ROUND_PREFER_FLOOR));
   Tensor cube_coeff_ = Tensor(-0.75);
   Tensor batch_dims_ = Tensor(0);
+  Tensor padding_mode_ = Tensor(static_cast<uint64_t>(PaddingMode::EDGE));
 };
 
 ///
@@ -1702,7 +1710,8 @@ inline TensorVec layer(const std::string& op, const TensorVec& operands, const D
 
 inline Tensor layer(const std::string& op, const TensorVec& operands, const Dictionary& attrs,
                     const LayerBodySingleFn& fn, edsl_source_location loc = edsl_source_location::current()) {
-  return layer(op, operands, attrs, [&]() { return TensorVec{fn()}; }, loc)[0];
+  return layer(
+      op, operands, attrs, [&]() { return TensorVec{fn()}; }, loc)[0];
 }
 
 inline Tensor layer(const std::string& op, const TensorVec& operands, const LayerBodySingleFn& fn,

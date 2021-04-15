@@ -89,6 +89,16 @@ def GatherMode : I64EnumAttr<
   let cppNamespace = "pmlc::util";
 }
 
+def PaddingMode : I64EnumAttr<
+    "PaddingMode",
+    "Padding mode",
+    [
+      I64EnumAttrCase<"edge", 0>,
+      I64EnumAttrCase<"zero", 1>,
+    ]> {
+  let cppNamespace = "pmlc::util";
+}
+
 def ScatterMode : I64EnumAttr<
     "ScatterMode",
     "Scatter update mode",

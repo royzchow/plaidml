@@ -102,8 +102,8 @@ struct GatherOp : Intrinsic {
   TensorShapes getShapes(Evaluator *evaluator, ArrayRef<ExprNodePtr> operands,
                          ArrayRef<TensorShape> shapes) const final {
     auto operands_size = operands.size();
-    if (operands_size != 8) {
-      throw std::runtime_error("'gather' requires eight arguments.");
+    if (operands_size != 9) {
+      throw std::runtime_error("'gather' requires nine arguments.");
     }
     auto tensor = shapes[0];
     auto idxs = shapes[1];
@@ -157,6 +157,13 @@ struct GatherOp : Intrinsic {
     if (!batchDims) {
       throw std::runtime_error(
           "'gather' primitive expects the 'batchDims' argument "
+          "to be a constant integer");
+    }
+
+    auto paddingMode = getIntegerValue(evaluator, operands[8]);
+    if (!paddingMode) {
+      throw std::runtime_error(
+          "'gather' primitive expects the 'paddingMode' argument "
           "to be a constant integer");
     }
 
