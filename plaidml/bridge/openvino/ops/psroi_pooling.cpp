@@ -240,12 +240,12 @@ void registerPSROIPooling() {
                                                 : (bin_start_h + bin_start_h + bin_height) * (height - 1) / 2;
       edsl::Tensor c_in = (sby * spatial_bins_x + sbx) * num_classes + c_out;
 
-      output = edsl::gather(I, batch_id).axis(0);
-      output = edsl::gather(output, c_in).axis(-3);
+      output = edsl::gather(I, batch_id).axis(0).paddingMode(PaddingMode::ZERO);
+      output = edsl::gather(output, c_in).axis(-3).paddingMode(PaddingMode::ZERO);
       output = extract_reduce_rois_dim(output);
-      output = edsl::gather(output, point_y).axis(-2);
+      output = edsl::gather(output, point_y).axis(-2).paddingMode(PaddingMode::ZERO);
       output = extract_reduce_other_dims(output);
-      output = edsl::gather(output, point_x).axis(-1);
+      output = edsl::gather(output, point_x).axis(-1).paddingMode(PaddingMode::ZERO);
       output = extract_tensor(output);
       output = compute_psroi_pooling(output);
       output = output / (spatial_bins_x * spatial_bins_y);
