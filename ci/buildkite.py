@@ -134,7 +134,6 @@ def cmd_build(args, remainder):
     check = variant.get('check', 'smoke')
     system = variant.get('system', 'Linux')
 
-    temp_dir = Path('/tmp') / os.getenv('BUILDKITE_AGENT_NAME')
     build_dir = Path(build_root) / build_type
     logs_dir = Path('logs').resolve()
     logs_dir.mkdir(parents=True, exist_ok=True)
@@ -142,11 +141,10 @@ def cmd_build(args, remainder):
     util.printf('--- :building_construction: configure')
     configure_log = logs_dir / 'configure.log'
     with configure_log.open('wb') as fp:
-        util.check_call(
-            ['python', 'configure', '--ci', f'--temp={temp_dir}', f'--type={build_type}'],
-            env=env,
-            stdout=fp,
-            stderr=subprocess.STDOUT)
+        util.check_call(['python', 'configure', '--ci', f'--type={build_type}'],
+                        env=env,
+                        stdout=fp,
+                        stderr=subprocess.STDOUT)
 
     util.printf('--- :hammer_and_wrench: ninja')
     util.check_call(['ninja', '-C', build_dir], env=env)
