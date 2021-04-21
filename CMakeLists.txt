@@ -58,7 +58,6 @@ endif()
 # -------------------------------------------------------------------------------
 # Third party dependencies
 # -------------------------------------------------------------------------------
-include(CPM)
 include(boost)
 include(easylogging)
 if(NOT InferenceEngineDeveloperPackage_FOUND)
