@@ -15,7 +15,7 @@ const std::vector<InferenceEngine::Precision> netPrecisions = {
     InferenceEngine::Precision::FP32,
     // InferenceEngine::Precision::FP16  // TODO: Not yet working
 };
-const std::vector<std::vector<float>> coords = {{0, 0, 0, 2, 2}, {0, 1, 1, 2, 2, 0, 0, 0, 4, 4}};
+const std::vector<std::vector<size_t>> coords = {{1, 5}, {2, 5}};
 const std::vector<float> spatial_scale = {1.0, 0.5};
 const std::vector<std::string> mode = {"average", "bilinear"};
 

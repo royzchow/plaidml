@@ -137,7 +137,7 @@ void registerPSROIPooling() {
       if (output_dim * group_size * group_size != channel_in) {
         THROW_IE_EXCEPTION << "Incorrected channel of the input tensor.";
       }
-      std::vector<edsl::Tensor> bin_output_concat_batch_size_vec;
+      std::vector<edsl::Tensor> single_bin_output_vec;
       for (size_t roi = 0; roi < num_rois; ++roi) {
         // Get the start and end coordinate of the box.
         auto batch_id = coords[roi * BOX_ELEMENT_SIZE];
@@ -154,9 +154,7 @@ void registerPSROIPooling() {
         auto bin_width = box_width / pooling_width;
         auto bin_height = box_height / pooling_height;
 
-        std::vector<edsl::Tensor> bin_output_concat_width_vec;
         for (size_t ph = 0; ph < pooling_height; ++ph) {
-          std::vector<edsl::Tensor> single_bin_output_vec;
           for (size_t pw = 0; pw < pooling_width; ++pw) {
             size_t bin_start_w = std::min(static_cast<size_t>(floorf(start_w + pw * bin_width)), width - 1);
             size_t bin_start_h = std::min(static_cast<size_t>(floorf(start_h + ph * bin_height)), height - 1);
@@ -170,13 +168,11 @@ void registerPSROIPooling() {
             auto single_bin_output = single_bin_pooling(bin_input, ph, pw, group_size);
             single_bin_output_vec.push_back(single_bin_output);
           }
-          auto bin_output_concat_width = op::concatenate(single_bin_output_vec, 3);
-          bin_output_concat_width_vec.push_back(bin_output_concat_width);
         }
-        auto bin_output_concat_height = op::concatenate(bin_output_concat_width_vec, 2);
-        bin_output_concat_batch_size_vec.push_back(bin_output_concat_height);
       }
-      output = op::concatenate(bin_output_concat_batch_size_vec, 0);
+      output = op::concatenate(single_bin_output_vec, 3);
+      output = op::reshape(output, make_tuple<size_t>({output_dim, num_rois, pooling_height, pooling_width}));
+      output = op::transpose(output, make_tuple<int>({1, 0, 2, 3}));
     } else if (mode == "bilinear") {
       if (output_dim * spatial_bins_x * spatial_bins_y != channel_in) {
         THROW_IE_EXCEPTION << "Incorrected channel of the input tensor.";
