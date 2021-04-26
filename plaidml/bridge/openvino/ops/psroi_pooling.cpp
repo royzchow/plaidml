@@ -16,17 +16,6 @@ using namespace edsl;             // NOLINT[build/namespaces]
 
 namespace {
 
-template <typename T>
-std::vector<T> cast_constant_operand(size_t operand_idx, ngraph::Node* layer) {
-  auto* ngraph_const = ngraph::as_type<ngraph::op::Constant>(layer->get_input_node_ptr(operand_idx));
-  if (ngraph_const) {
-    return ngraph_const->cast_vector<T>();
-  } else {
-    THROW_IE_EXCEPTION
-        << "Dynamic coordinate is not currently supported by PlaidML plugin; all coordinate must be Constants. ";
-  }
-}
-
 // Get single bin output
 edsl::Tensor single_bin_pooling(edsl::Tensor I, size_t ph, size_t pw, size_t group_size) {
   std::vector<edsl::TensorDim> I_dims(4), O_dims(4);
@@ -115,7 +104,7 @@ void registerPSROIPooling() {
     auto I = ctx.operands.at(0);  // Input
     auto C = ctx.operands.at(1);  // Coord
 
-    std::vector<float> coords = cast_constant_operand<float>(1, layer);
+    std::vector<float> coords = PlaidMLPlugin::cast_constant_operand<float>(1, layer);
     IE_ASSERT((coords.size() % BOX_ELEMENT_SIZE) == 0);
     // Get attributes about the operation.
     auto I_shape = layer->get_input_shape(0);
@@ -236,6 +225,8 @@ void registerPSROIPooling() {
                                                 : (bin_start_h + bin_start_h + bin_height) * (height - 1) / 2;
       edsl::Tensor c_in = (sby * spatial_bins_x + sbx) * num_classes + c_out;
 
+      // There will be redundant data after multiple gather operation, so I just use extract function to discard
+      // redundant data. And maybe gather_nd can avoid this case, but gather_nd can't support float index for now.
       output = edsl::gather(I, batch_id).axis(0).paddingMode(PaddingMode::ZERO);
       output = edsl::gather(output, c_in).axis(-3).paddingMode(PaddingMode::ZERO);
       output = extract_reduce_rois_dim(output);
