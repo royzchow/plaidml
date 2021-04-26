@@ -780,7 +780,7 @@ struct IndexOpConversion : public OpConversionPattern<tile::IndexOp> {
                                    tile::getPaddingInfo(op));
     rewriter.create<AffineYieldOp>(loc, ValueRange{stored});
 
-OBOBOB    // Replace the op
+    // Replace the op
     rewriter.replaceOp(op, forOp.getResult(0));
 
     return success();

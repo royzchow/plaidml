@@ -15,8 +15,8 @@ using namespace mlir; // NOLINT
 using util::GatherMode;
 using util::InterpolationMode;
 using util::NearestMode;
-using util::ScatterMode;
 using util::PaddingMode;
+using util::ScatterMode;
 
 namespace {
 
@@ -360,8 +360,8 @@ struct GatherOpConversion : public OpConversionPattern<tile::GatherOp> {
               loc, rewriter, tensor, idx, srcOps, axis, op.nearestMode());
           break;
         case InterpolationMode::linear:
-          interpVal = buildLinearInterpolationOps(loc, rewriter, tensor, idx,
-                                                  srcOps, axis);
+          interpVal = buildLinearInterpolationOps(
+              loc, rewriter, tensor, idx, srcOps, axis, op.paddingMode());
           break;
         case InterpolationMode::cubic:
           interpVal = buildCubicInterpolationOps(
@@ -466,8 +466,8 @@ struct GatherOpConversion : public OpConversionPattern<tile::GatherOp> {
   Value buildLinearInterpolationOps(Location loc,
                                     ConversionPatternRewriter &rewriter,
                                     Value tensor, Value idx,
-                                    std::vector<Value> &srcOps,
-                                    size_t axis) const {
+                                    std::vector<Value> &srcOps, size_t axis,
+                                    PaddingMode paddingMode) const {
     IndexType idxType = rewriter.getIndexType();
     IntegerType i32Type = rewriter.getI32Type();
     Type elementType = tensor.getType().cast<MemRefType>().getElementType();
@@ -514,7 +514,7 @@ struct GatherOpConversion : public OpConversionPattern<tile::GatherOp> {
     default:
       llvm_unreachable("Unsupported PaddingMode");
     }
-      return result;
+    return result;
   }
 
   Value buildCubicInterpolationOps(Location loc,
