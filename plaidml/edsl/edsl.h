@@ -997,8 +997,17 @@ class gather {
   /// Construct gather.
   ///
   Tensor build(edsl_source_location loc = edsl_source_location::current()) const {
-    std::vector<Tensor> args = {x_,          y_,    axis_,       interpolation_mode_, nearest_mode_,
-                                cube_coeff_, mode_, batch_dims_, padding_mode_};
+    std::vector<Tensor> args = {
+        x_,                   //
+        y_,                   //
+        axis_,                //
+        interpolation_mode_,  //
+        nearest_mode_,        //
+        cube_coeff_,          //
+        mode_,                //
+        batch_dims_,          //
+        padding_mode_,        //
+    };
     return intrinsicCall(loc, "gather", args);
   }
 

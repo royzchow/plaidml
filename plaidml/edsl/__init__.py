@@ -913,7 +913,7 @@ def gather(x,
         cube_coeff (float): The coefficient that controls the cubic interpolation.
         gather_mode (Enum): The type of gather op.
         batch_dims (int): The number of leading batch dimensions.
-        padding_mode (Enum): The type of padding only interpolation_mode is linear.
+        padding_mode (Enum): The padding mode determines what values to use for out-of-bounds reads.
 
     Returns:
         Tensor: The result of the ``gather`` operation.
